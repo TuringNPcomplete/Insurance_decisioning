@@ -32,7 +32,7 @@ It includes variables such as:
 - medical charges
 - claim outcome
 
-## What I Did
+## Preprocessing and Training steps
 
 The notebook follows a simple end-to-end workflow:
 
