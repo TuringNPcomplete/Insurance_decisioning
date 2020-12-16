@@ -114,6 +114,6 @@ This notebook is a strong exploratory case study, but there are a few things I w
 
 ## Repository Contents
 
-- `insurance-claim-prediction-top-ml-models.ipynb`: full notebook analysis
+- `insurance-claim-prediction.ipynb`: full notebook analysis
 - `Insurance.csv`: dataset used in the notebook
 - `assets/`: exported plots used in this README
