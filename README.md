@@ -1,8 +1,8 @@
 # Insurance Claim Outcome Prediction
 
-This project looks at a practical insurance question, ie., can we predict whether a customer will file a claim based on basic profile and policy-related information?
+This project looks at a practical insurance question: can we predict whether a customer will file a claim based on basic profile and policy-related information?
 
-The goal was not only to get a strong score, but also to show a clear, thoughtful workflow..
+The goal was not only to get a strong score, but also to show a clear, thoughtful workflow and then test whether the result still holds up under a more defensible evaluation setup.
 
 ## Project Snapshot
 
@@ -10,8 +10,10 @@ The goal was not only to get a strong score, but also to show a clear, thoughtfu
 - Target variable: `insuranceclaim`
 - Raw dataset size: 1,338 rows
 - Final modeling dataset: 1,276 rows and 14 columns
-- Best model in this notebook: Extreme Gradient Boosting (XGBoost)
-- Best headline result: 93.8% accuracy, 93.7% F1-score, 98.3% ROC-AUC
+- Best baseline benchmark: Extreme Gradient Boosting (XGBoost)
+- Best baseline result: 93.8% accuracy, 93.7% F1-score, 98.3% ROC-AUC
+- Strongest train-first re-check: XGBoost without the medical billing amount feature
+- Most reliable final result: 95.15% accuracy, 95.15% F1-score, 98.27% ROC-AUC
 
 ## Why This Matters
 
@@ -44,6 +46,7 @@ The notebook follows a simple end-to-end workflow:
 6. Balanced the target classes with SMOTE.
 7. Reviewed feature relationships and tested feature reduction ideas.
 8. Trained and compared eight classification models.
+9. Re-ran the strongest model in a train-first setup, compared performance with and without the medical billing amount feature, and reviewed subgroup and error patterns.
 
 ## Data Preparation Highlights
 
@@ -74,11 +77,11 @@ Most of the data was retained. About 9.8% of rows were removed during cleanup, w
 
 This heatmap gives a quick view of how each model performed across accuracy, precision, recall, F1-score, and ROC-AUC.
 
-### Feature Importance From the Best Model
+### Feature Importance From the Best Baseline Model
 
 ![XGBoost feature importance](assets/xgb-feature-importance.png)
 
-In the XGBoost model, smoking status, the encoded children features, BMI, age, and charges carried much of the predictive signal.
+In the baseline XGBoost model, smoking status, the encoded children features, BMI, age, and the medical billing amount feature carried much of the predictive signal.
 
 ## Model Results
 
@@ -95,13 +98,36 @@ The notebook compares eight models. The table below summarizes the main results.
 | Gradient Boosting | 92.6% | 92.6% | 96.7% |
 | Extreme Gradient Boosting | 93.8% | 93.7% | 98.3% |
 
+## Robustness Re-check
+
+The original leaderboard is useful, but the more important question is whether the result still looks strong when the train/test split happens before SMOTE and preprocessing is fit on training data only.
+
+| Setup | Accuracy | F1-score | ROC-AUC |
+| --- | ---: | ---: | ---: |
+| XGBoost with medical billing amount feature | 91.42% | 91.47% | 96.96% |
+| XGBoost without medical billing amount feature | 95.15% | 95.15% | 98.27% |
+
+In this re-check, removing the medical billing amount feature improved F1-score by 3.68 points and ROC-AUC by 1.31 points. That makes the no-billing-feature version the more credible final result in this project.
+
+## Segment Review
+
+- Non-smokers reached 95.14% F1-score and 95.15% recall, while smokers dropped to 83.40% F1-score and 79.03% recall.
+- The strongest BMI segment was up to 25, while the `Above 30` group fell to 87.27% F1-score and 86.71% recall.
+- The weakest age segment in this split was 31 to 45, with 85.58% F1-score and 85.71% recall.
+
+## Error Analysis
+
+- The model got 245 predictions correct, with 19 false negatives and 4 false positives.
+- Most mistakes were false negatives, so the bigger risk here is missing a true claimant rather than incorrectly flagging a non-claimant.
+- The largest error pocket was the smoker plus `Above 30` BMI subgroup, which accounted for 12 of the 19 false negatives.
+
 ## Main Takeaways
 
-- Tree-based ensemble models were the strongest group in this analysis.
-- XGBoost gave the best overall result and the strongest ROC-AUC.
-- Gradient Boosting and Random Forest also performed very well and were close behind.
-- Logistic Regression was a solid baseline, even though it was clearly behind the top ensemble models.
-- Naive Bayes was the weakest model in this comparison.
+- Tree-based ensemble models were the strongest group in the original model comparison.
+- XGBoost led the first-pass benchmark, but the more useful conclusion came from the train-first re-check.
+- The model remained strong after removing the medical billing amount feature, which suggests that field was not helping generalization in this setup.
+- The more important remaining weakness is lower recall for smoker and higher-BMI segments, not overall score alone.
+- Logistic Regression was still a reasonable benchmark, while Naive Bayes was the weakest model in the original comparison.
 
 ## Notes and Next Steps
 
@@ -109,7 +135,7 @@ This notebook is a strong exploratory case study, but there are a few things I w
 
 - move preprocessing and resampling into a single training pipeline
 - validate the workflow with stricter cross-validation
-- review whether `charges` is available early enough for a real-world prediction setting
+- test whether segment-specific thresholding or class weighting can improve recall for smokers and higher-BMI policyholders
 - add threshold tuning based on business costs for false positives and false negatives
 
 ## Repository Contents
